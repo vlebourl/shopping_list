@@ -190,7 +190,7 @@ class ShoppingData:
     async def async_clear_completed(self):
         """Clear completed items."""
         for itm in [itm for itm in self.items if itm["complete"]]:
-            if self.catalog.get(item["name"]):
+            if self.catalog.get(itm["name"]):
                 itm_name = self.catalog.get(itm["name"])
             else:
                 itm_name = itm["name"]
@@ -209,6 +209,17 @@ class ShoppingData:
             item = {"name": bitm["name"], "id": bitm["name"], "complete": False}
             if item in self.items:
                 self.items[self.items.index(item)]["complete"] = True
+        for itm in self.items:
+            if self.catalog.get(itm["name"]):
+                itm_name = self.catalog.get(itm["name"])
+            else:
+                itm_name = itm["name"]
+            if itm["complete"]:
+                if {"name": itm_name, "specification": ""} not in recently:
+                    self.bring.recent_item(itm_name)
+            else:
+                if {"name": itm_name, "specification": ""} not in purchase:
+                    self.bring.purchase_item(itm_name, "")
 
     async def async_load(self):
         """Load items."""
