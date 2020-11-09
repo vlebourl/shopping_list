@@ -10,3 +10,5 @@ complete_item:
     name:
       description: The name of the item to mark as completed.
       example: Beer
+sync_bring:
+  description: Syncs with Bring Shopping List.
