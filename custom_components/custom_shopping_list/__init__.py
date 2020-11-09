@@ -4,6 +4,8 @@ import uuid
 
 import voluptuous as vol
 
+from .bring import BringApi
+
 from homeassistant import config_entries
 from homeassistant.components import http, websocket_api
 from homeassistant.components.http.data_validator import RequestDataValidator
@@ -24,6 +26,7 @@ PERSISTENCE = ".shopping_list.json"
 
 SERVICE_ADD_ITEM = "add_item"
 SERVICE_COMPLETE_ITEM = "complete_item"
+SERVICE_SYNC_BRING = "sync_bring"
 
 SERVICE_ITEM_SCHEMA = vol.Schema({vol.Required(ATTR_NAME): vol.Any(None, cv.string)})
 
@@ -92,6 +95,11 @@ async def async_setup_entry(hass, config_entry):
         else:
             await data.async_update(item["id"], {"name": name, "complete": True})
 
+    async def sync_bring_service(call):
+        """Sync with Bring List"""
+        data = hass.data[DOMAIN]
+        data.sync_bring()
+
     data = hass.data[DOMAIN] = ShoppingData(hass)
     await data.async_load()
 
@@ -100,6 +108,9 @@ async def async_setup_entry(hass, config_entry):
     )
     hass.services.async_register(
         DOMAIN, SERVICE_COMPLETE_ITEM, complete_item_service, schema=SERVICE_ITEM_SCHEMA
+    )
+    hass.services.async_register(
+        DOMAIN, SERVICE_SYNC_BRING, sync_bring_service, schema={}
     )
 
     hass.http.register_view(ShoppingListView)
@@ -136,6 +147,11 @@ class ShoppingData:
 
     def __init__(self, hass):
         """Initialize the shopping list."""
+        self.bring = BringApi(
+            "41fdcefe-17ae-4f78-b169-faa17059ac84",
+            "3eb85136-62e4-4711-b637-d136f86003f7",
+        )
+        self.catalog = {v: k for k, v in self.bring.loadTranslations("fr-FR").items()}
         self.hass = hass
         self.items = []
 
@@ -143,6 +159,11 @@ class ShoppingData:
         """Add a shopping list item."""
         item = {"name": name, "id": uuid.uuid4().hex, "complete": False}
         self.items.append(item)
+        if self.catalog.get(item["name"]):
+            itm_name = self.catalog.get(item["name"])
+        else:
+            itm_name = item["name"]
+        self.bring.purchase_item(itm_name, "")
         await self.hass.async_add_executor_job(self.save)
         return item
 
@@ -155,13 +176,39 @@ class ShoppingData:
 
         info = ITEM_UPDATE_SCHEMA(info)
         item.update(info)
+        if self.catalog.get(item["name"]):
+            itm_name = self.catalog.get(item["name"])
+        else:
+            itm_name = item["name"]
+        if item["complete"]:
+            self.bring.recent_item(itm_name)
+        else:
+            self.bring.purchase_item(itm_name, "")
         await self.hass.async_add_executor_job(self.save)
         return item
 
     async def async_clear_completed(self):
         """Clear completed items."""
+        for itm in [itm for itm in self.items if itm["complete"]]:
+            if self.catalog.get(item["name"]):
+                itm_name = self.catalog.get(itm["name"])
+            else:
+                itm_name = itm["name"]
+            self.bring.remove_item(itm_name)
         self.items = [itm for itm in self.items if not itm["complete"]]
         await self.hass.async_add_executor_job(self.save)
+
+    def sync_bring(self):
+        purchase = self.bring.get_items("fr-FR")["purchase"]
+        for bitm in purchase:
+            item = {"name": bitm["name"], "id": bitm["name"], "complete": False}
+            if item not in self.items:
+                self.items.append(item)
+        recently = self.bring.get_items("fr-FR")["recently"]
+        for bitm in recently:
+            item = {"name": bitm["name"], "id": bitm["name"], "complete": False}
+            if item in self.items:
+                self.items[self.items.index(item)]["complete"] = True
 
     async def async_load(self):
         """Load items."""
@@ -171,9 +218,11 @@ class ShoppingData:
             return load_json(self.hass.config.path(PERSISTENCE), default=[])
 
         self.items = await self.hass.async_add_executor_job(load)
+        self.sync_bring()
 
     def save(self):
         """Save the items."""
+        self.sync_bring()
         save_json(self.hass.config.path(PERSISTENCE), self.items)
 
 
