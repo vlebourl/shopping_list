@@ -1,3 +1,5 @@
+[![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/custom-components/hacs)
+
 # Custom Shopping List with Bring integration.
 
 A custom implementation of Home Assistant's Shopping List that synchronises with Bring Shopping List (https://getbring.com/#!/app). This overrides the core implementation of Shopping List and thus is accessible in Home Assistant from the sidebar or through the [Shopping List card](https://www.home-assistant.io/lovelace/shopping-list/)
