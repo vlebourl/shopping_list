@@ -185,7 +185,7 @@ class BringData:
     """Class to hold a Bring shopping list data."""
 
     def __init__(self, userUUID, listUUID) -> None:
-        self.api = BringApi(userUUID, listUUID)
+        self.api = BringApi(userUUID, listUUID, True)
         self.catalog = {v: k for k, v in self.api.loadTranslations("fr-FR").items()}
         self.purchase_list = []
         self.recent_list = []
