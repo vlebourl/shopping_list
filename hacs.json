@@ -1,0 +1,6 @@
+{
+  "name": "Bring Shopping List",
+  "domains": ["shopping_list"],
+  "homeassistant": "0.99.9",
+  "render_readme": "true",
+}
