@@ -21,4 +21,7 @@ To use it, add the following to your configuration.yaml:
 shopping_list:
   bring_username: 'username'
   bring_password: 'password'
+  bring_language: 'en-EN'
 ```
+
+Full list of supported language isn't known, language should follow the `locale` format, such as `de-DE`, `fr-FR`, `ch-FR`, etc.
