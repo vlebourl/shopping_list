@@ -20,6 +20,7 @@ ATTR_NAME = "name"
 
 CONF_BRING_USERNAME = "bring_username"
 CONF_BRING_PASSWORD = "bring_password"
+CONF_BRING_LANGUAGE = "bring_language"
 
 _LOGGER = logging.getLogger(__name__)
 CONFIG_SCHEMA = vol.Schema(
@@ -27,6 +28,7 @@ CONFIG_SCHEMA = vol.Schema(
         DOMAIN: {
             vol.Required(CONF_BRING_USERNAME): str,
             vol.Required(CONF_BRING_PASSWORD): str,
+            vol.Optional(CONF_BRING_LANGUAGE, default="en-EN"): str,
         }
     },
     extra=vol.ALLOW_EXTRA,
@@ -79,12 +81,14 @@ async def async_setup(hass, config):
         hass.data[DOMAIN] = {
             CONF_BRING_USERNAME: "",
             CONF_BRING_PASSWORD: "",
+            CONF_BRING_LANGUAGE: "",
         }
         return True
 
     hass.data[DOMAIN] = {
         CONF_BRING_USERNAME: config[CONF_BRING_USERNAME],
         CONF_BRING_PASSWORD: config[CONF_BRING_PASSWORD],
+        CONF_BRING_LANGUAGE: config[CONF_BRING_LANGUAGE],
     }
 
     hass.async_create_task(
@@ -126,8 +130,9 @@ async def async_setup_entry(hass, config_entry):
 
     username = hass.data[DOMAIN][CONF_BRING_USERNAME]
     password = hass.data[DOMAIN][CONF_BRING_PASSWORD]
+    language = hass.data[DOMAIN][CONF_BRING_LANGUAGE]
 
-    data = hass.data[DOMAIN] = ShoppingData(hass, username, password)
+    data = hass.data[DOMAIN] = ShoppingData(hass, username, password, language)
     await data.async_load()
 
     hass.services.async_register(
@@ -184,9 +189,12 @@ class ShoppingItem:
 class BringData:
     """Class to hold a Bring shopping list data."""
 
-    def __init__(self, userUUID, listUUID) -> None:
+    def __init__(self, userUUID, listUUID, language) -> None:
         self.api = BringApi(userUUID, listUUID, True)
-        self.catalog = {v: k for k, v in self.api.loadTranslations("fr-FR").items()}
+        self.language = language
+        self.catalog = {
+            v: k for k, v in self.api.loadTranslations(self.language).items()
+        }
         self.purchase_list = []
         self.recent_list = []
         self.update_lists()
@@ -203,11 +211,11 @@ class BringData:
     def update_lists(self):
         self.purchase_list = [
             self.bring_to_shopping(itm, False)
-            for itm in self.api.get_items("fr-FR")["purchase"]
+            for itm in self.api.get_items(self.language)["purchase"]
         ]
         self.recent_list = [
             self.bring_to_shopping(itm, True)
-            for itm in self.api.get_items("fr-FR")["recently"]
+            for itm in self.api.get_items(self.language)["recently"]
         ]
 
     def convert_name(self, name):
@@ -228,9 +236,9 @@ class BringData:
 class ShoppingData:
     """Class to hold shopping list data."""
 
-    def __init__(self, hass, username, password):
+    def __init__(self, hass, username, password, language):
         """Initialize the shopping list."""
-        self.bring = BringData(username, password)
+        self.bring = BringData(username, password, language)
         self.hass = hass
         self.items = []
 
