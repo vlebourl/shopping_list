@@ -27,3 +27,20 @@ shopping_list:
 ```
 
 Full list of supported language isn't known, language should follow the `locale` format, such as `de-DE`, `fr-FR`, `ch-FR`, etc.
+
+Items added, checked or removed from the list in HA are automatically synced with your Bring list. Items added to or removed from your Bring list needs to be synced back to HA. The Bring -> HA sync is done every time an item is modified in HA's list, but HA has no way of knowing when Bring is modified... To manually sync, use the service `shopping_list.sync_bring`. A solution can be to add an automation that syncs Bring to HA every few minutes, such as this:
+```yaml
+- id: 'sync_bring'
+  alias: Sync Bring
+  description: ''
+  trigger:
+  - platform: time_pattern
+    hours: '*'
+    minutes: /15
+    seconds: '0'
+  condition: []
+  action:
+  - service: shopping_list.sync_bring
+    data: {}
+  mode: single
+```
