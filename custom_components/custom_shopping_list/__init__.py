@@ -339,6 +339,7 @@ class ShoppingData:
                 name = name[0 : name.index(" [")]
             item.name = name
             item.specification = specification
+            item.id = name
             self.map_items.pop(item_id)
             self.map_items[item.name] = item
 
