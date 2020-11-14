@@ -337,6 +337,7 @@ class ShoppingData:
             if " [" in name:
                 specification = name[name.index(" [") + 2 : len(name) - 1]
                 name = name[0 : name.index(" [")]
+            self.bring.remove_item(item)
             item.name = name
             item.specification = specification
             item.id = name
