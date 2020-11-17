@@ -2,18 +2,17 @@
 import logging
 import uuid
 
+import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
-
-from .bring import BringApi
-
 from homeassistant import config_entries
 from homeassistant.components import http, websocket_api
 from homeassistant.components.http.data_validator import RequestDataValidator
 from homeassistant.const import HTTP_BAD_REQUEST, HTTP_NOT_FOUND
 from homeassistant.core import callback
-import homeassistant.helpers.config_validation as cv
+from homeassistant.helpers import aiohttp_client
 from homeassistant.util.json import load_json, save_json
 
+from .bring import BringApi
 from .const import DOMAIN
 
 ATTR_NAME = "name"
@@ -132,7 +131,12 @@ async def async_setup_entry(hass, config_entry):
     password = hass.data[DOMAIN][CONF_BRING_PASSWORD]
     language = hass.data[DOMAIN][CONF_BRING_LANGUAGE]
 
-    data = hass.data[DOMAIN] = ShoppingData(hass, username, password, language)
+    session = aiohttp_client.async_create_clientsession(hass)
+    bring_data = BringData(username, password, language, session)
+    await bring_data.api.login()
+    await bring_data.load_catalog()
+
+    data = hass.data[DOMAIN] = ShoppingData(hass, username, password, language, bring_data)
     await data.async_load()
 
     hass.services.async_register(
@@ -189,12 +193,10 @@ class ShoppingItem:
 class BringData:
     """Class to hold a Bring shopping list data."""
 
-    def __init__(self, userUUID, listUUID, language) -> None:
-        self.api = BringApi(userUUID, listUUID, True)
+    def __init__(self, username, password, language, session) -> None:
+        self.api = BringApi(username, password, session)
         self.language = language
-        self.catalog = {
-            v: k for k, v in self.api.loadTranslations(self.language).items()
-        }
+        self.catalog = {}
         self.purchase_list = []
         self.recent_list = []
         self.update_lists()
@@ -208,14 +210,22 @@ class BringData:
             {"name": bitm["name"], "id": specification, "complete": complete}
         )
 
-    def update_lists(self):
+    async def load_catalog(self):
+        catalog = await self.api.load_translations(self.language)
+        self.catalog = {
+            v: k
+            for k, v in catalog.items()
+        }
+
+    async def update_lists(self):
+        lists = await self.api.get_items(self.language)
         self.purchase_list = [
             self.bring_to_shopping(itm, False)
-            for itm in self.api.get_items(self.language)["purchase"]
+            for itm in lists["purchase"]
         ]
         self.recent_list = [
             self.bring_to_shopping(itm, True)
-            for itm in self.api.get_items(self.language)["recently"]
+            for itm in lists["recently"]
         ]
 
     def convert_name(self, name):
@@ -223,22 +233,22 @@ class BringData:
             return self.catalog.get(name)
         return name
 
-    def purchase_item(self, item: ShoppingItem):
-        self.api.purchase_item(self.convert_name(item.name), item.id)
+    async def purchase_item(self, item: ShoppingItem):
+        await self.api.purchase_item(self.convert_name(item.name), item.id)
 
-    def recent_item(self, item: ShoppingItem):
-        self.api.recent_item(self.convert_name(item.name))
+    async def recent_item(self, item: ShoppingItem):
+        await self.api.recent_item(self.convert_name(item.name))
 
-    def remove_item(self, item: ShoppingItem):
-        self.api.remove_item(self.convert_name(item.name))
+    async def remove_item(self, item: ShoppingItem):
+        await self.api.remove_item(self.convert_name(item.name))
 
 
 class ShoppingData:
     """Class to hold shopping list data."""
 
-    def __init__(self, hass, username, password, language):
+    def __init__(self, hass, username, password, language, bring_data):
         """Initialize the shopping list."""
-        self.bring = BringData(username, password, language)
+        self.bring = bring_data
         self.hass = hass
         self.items = []
 
@@ -246,8 +256,8 @@ class ShoppingData:
         """Add a shopping list item."""
         item = ShoppingItem({"name": name, "id": uuid.uuid4().hex, "complete": False})
         self.items.append(item.to_dict())
-        self.bring.purchase_item(item)
-        await self.hass.async_add_executor_job(self.save)
+        await self.bring.purchase_item(item)
+        await self.save
         return item.to_dict()
 
     async def async_update(self, item_id, info):
@@ -261,18 +271,18 @@ class ShoppingData:
         item = ShoppingItem(temp)
 
         if item.complete:
-            self.bring.recent_item(item)
+            await self.bring.recent_item(item)
         else:
-            self.bring.purchase_item(item)
-        await self.hass.async_add_executor_job(self.save)
+            await self.bring.purchase_item(item)
+        await self.save
         return item.to_dict()
 
     async def async_clear_completed(self):
         """Clear completed items."""
         for itm in [itm for itm in self.items if itm["complete"]]:
-            self.bring.remove_item(ShoppingItem(itm))
+            await self.bring.remove_item(ShoppingItem(itm))
         self.items = [itm for itm in self.items if not itm["complete"]]
-        await self.hass.async_add_executor_job(self.save)
+        await self.save
 
     def find_item(self, item):
         """Find a Bring item in the shopping list"""
@@ -283,8 +293,8 @@ class ShoppingData:
             index = index + 1
         return index
 
-    def sync_bring(self):
-        self.bring.update_lists()
+    async def sync_bring(self):
+        await self.bring.update_lists()
 
         for itm in self.bring.purchase_list:
             if self.find_item(itm) == len(self.items):
@@ -297,10 +307,10 @@ class ShoppingData:
         for itm in self.items:
             if itm["complete"]:
                 if itm not in self.bring.recent_list:
-                    self.bring.recent_item(ShoppingItem(itm))
+                    await self.bring.recent_item(ShoppingItem(itm))
             else:
                 if itm not in self.bring.purchase_list:
-                    self.bring.purchase_item(ShoppingItem(itm))
+                    await self.bring.purchase_item(ShoppingItem(itm))
 
     async def async_load(self):
         """Load items."""
@@ -310,12 +320,12 @@ class ShoppingData:
             return load_json(self.hass.config.path(PERSISTENCE), default=[])
 
         self.items = await self.hass.async_add_executor_job(load)
-        self.sync_bring()
+        await self.sync_bring()
 
-    def save(self):
+    async def save(self):
         """Save the items."""
-        self.sync_bring()
-        save_json(self.hass.config.path(PERSISTENCE), self.items)
+        await self.sync_bring()
+        await self.hass.async_add_executor_job(save_json(self.hass.config.path(PERSISTENCE), self.items))
 
 
 class ShoppingListView(http.HomeAssistantView):
