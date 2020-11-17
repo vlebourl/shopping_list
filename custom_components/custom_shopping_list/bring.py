@@ -188,7 +188,7 @@ class BringApi:
 
     # // Hidden Icons? Don't know what this is used for
     async def load_products(self):
-        return await ("bringproducts", headers=self.headers)
+        return await self.__get(("bringproducts", headers=self.headers)
 
     # // Found Icons? Don't know what this is used for
     async def load_features(self):
