@@ -136,7 +136,9 @@ async def async_setup_entry(hass, config_entry):
     await bring_data.api.login()
     await bring_data.load_catalog()
 
-    data = hass.data[DOMAIN] = ShoppingData(hass, username, password, language, bring_data)
+    data = hass.data[DOMAIN] = ShoppingData(
+        hass, username, password, language, bring_data
+    )
     await data.async_load()
 
     hass.services.async_register(
@@ -235,20 +237,15 @@ class BringData:
 
     async def load_catalog(self):
         catalog = await self.api.load_translations(self.language)
-        self.catalog = {
-            v: k
-            for k, v in catalog.items()
-        }
+        self.catalog = {v: k for k, v in catalog.items()}
 
     async def update_lists(self, map):
         lists = await self.api.get_items(self.language)
         self.purchase_list = [
-            self.bring_to_shopping(itm, map, False)
-            for itm in lists["purchase"]
+            self.bring_to_shopping(itm, map, False) for itm in lists["purchase"]
         ]
         self.recent_list = [
-            self.bring_to_shopping(itm, map, True)
-            for itm in lists["recently"]
+            self.bring_to_shopping(itm, map, True) for itm in lists["recently"]
         ]
 
     def convert_name(self, name):
@@ -315,8 +312,8 @@ class ShoppingData:
         """Add a shopping list item."""
         specification = ""
         if " [" in name:
-            specification = name[name.index(" [") + 2: len(name) - 1]
-            name = name[0: name.index(" [")]
+            specification = name[name.index(" [") + 2 : len(name) - 1]
+            name = name[0 : name.index(" [")]
         item = ShoppingItem(
             {
                 "name": name,
@@ -399,7 +396,9 @@ class ShoppingData:
     async def save(self):
         """Save the items."""
         await self.sync_bring()
-        await self.hass.async_add_executor_job(save_json(self.hass.config.path(PERSISTENCE), self.items))
+        await self.hass.async_add_executor_job(
+            save_json(self.hass.config.path(PERSISTENCE), self.items)
+        )
 
 
 class ShoppingListView(http.HomeAssistantView):
