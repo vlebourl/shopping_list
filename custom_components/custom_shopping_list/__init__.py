@@ -184,10 +184,27 @@ class ShoppingItem:
     def __init__(self, item):
         self.name = item["name"]
         self.id = item["id"]
+        self.specification = item["specification"]
         self.complete = item["complete"]
 
-    def to_dict(self):
-        return vars(self)
+    def __str__(self):
+        return str(vars(self))
+
+    def __repr__(self) -> str:
+        return str(self)
+
+    def to_ha(self):
+        specification = ""
+        if len(self.specification) > 0:
+            specification = f" [{self.specification}]"
+        return {
+            "name": self.name + specification,
+            "id": self.id,
+            "complete": self.complete,
+        }
+
+    def to_bring(self):
+        return {"name": self.name, "specification": self.specification}
 
 
 class BringData:
@@ -199,15 +216,21 @@ class BringData:
         self.catalog = {}
         self.purchase_list = []
         self.recent_list = []
-        self.update_lists()
 
     @staticmethod
-    def bring_to_shopping(bitm, complete):
-        specification = bitm["specification"]
-        if specification == "":
-            specification = uuid.uuid4().hex
+    def bring_to_shopping(bitm, map, complete):
+        id = bitm["name"]
+        for key, itm in map.items():
+            if bitm["name"] == itm.name and bitm["specification"] == itm.specification:
+                id = key
+                break
         return ShoppingItem(
-            {"name": bitm["name"], "id": specification, "complete": complete}
+            {
+                "name": bitm["name"],
+                "id": id,
+                "specification": bitm["specification"],
+                "complete": complete,
+            }
         )
 
     async def load_catalog(self):
@@ -217,14 +240,14 @@ class BringData:
             for k, v in catalog.items()
         }
 
-    async def update_lists(self):
+    async def update_lists(self, map):
         lists = await self.api.get_items(self.language)
         self.purchase_list = [
-            self.bring_to_shopping(itm, False)
+            self.bring_to_shopping(itm, map, False)
             for itm in lists["purchase"]
         ]
         self.recent_list = [
-            self.bring_to_shopping(itm, True)
+            self.bring_to_shopping(itm, map, True)
             for itm in lists["recently"]
         ]
 
@@ -234,7 +257,7 @@ class BringData:
         return name
 
     async def purchase_item(self, item: ShoppingItem):
-        await self.api.purchase_item(self.convert_name(item.name), item.id)
+        await self.api.purchase_item(self.convert_name(item.name), item.specification)
 
     async def recent_item(self, item: ShoppingItem):
         await self.api.recent_item(self.convert_name(item.name))
@@ -250,67 +273,116 @@ class ShoppingData:
         """Initialize the shopping list."""
         self.bring = bring_data
         self.hass = hass
+        self.map_items = {}
         self.items = []
+
+    @staticmethod
+    def ha_to_shopping_item(item):
+        name = item["name"]
+        id = item["id"]
+        complete = item["complete"]
+        specification = ""
+        if " [" in name:
+            specification = name[name.index(" [") + 2 : len(name) - 1]
+            name = name[0 : name.index(" [")]
+        return ShoppingItem(
+            {
+                "name": name,
+                "id": id,
+                "specification": specification,
+                "complete": complete,
+            }
+        )
+
+    @staticmethod
+    def remove(list, item):
+        try:
+            list.remove(item)
+        except ValueError:
+            pass
+
+    def find_item(self, id):
+        return next((i for i, item in enumerate(self.items) if item["id"] == id), None)
+
+    def update_item(self, id, item):
+        i = self.find_item(id)
+        self.items[i] = item.to_ha()
+        self.items = [
+            i for n, i in enumerate(self.items) if i not in self.items[n + 1 :]
+        ]
 
     async def async_add(self, name):
         """Add a shopping list item."""
-        item = ShoppingItem({"name": name, "id": uuid.uuid4().hex, "complete": False})
-        self.items.append(item.to_dict())
+        specification = ""
+        if " [" in name:
+            specification = name[name.index(" [") + 2: len(name) - 1]
+            name = name[0: name.index(" [")]
+        item = ShoppingItem(
+            {
+                "name": name,
+                "id": f"{name}",
+                "specification": specification,
+                "complete": False,
+            }
+        )
+        self.items.append(item.to_ha())
         await self.bring.purchase_item(item)
+        self.map_items[item.id] = item
         await self.save
-        return item.to_dict()
+        return item.to_ha()
 
     async def async_update(self, item_id, info):
         """Update a shopping list item."""
-        temp = next((itm for itm in self.items if itm["id"] == item_id), None)
-        if temp is None:
+        item = self.map_items.get(item_id)
+        if item is None:
             raise KeyError
         info = ITEM_UPDATE_SCHEMA(info)
-        temp.update(info)
+        key = list(info.keys())[0]
+        value = info[key]
 
-        item = ShoppingItem(temp)
+        if key == "complete":
+            item.complete = value
+        elif key == "name":
+            name = value
+            specification = ""
+            if " [" in name:
+                specification = name[name.index(" [") + 2 : len(name) - 1]
+                name = name[0 : name.index(" [")]
+            self.bring.remove_item(item)
+            item.name = name
+            item.specification = specification
+            item.id = name
+            self.map_items.pop(item_id)
+            self.map_items[item.name] = item
 
         if item.complete:
             await self.bring.recent_item(item)
         else:
             await self.bring.purchase_item(item)
+        self.update_item(item_id, item)
         await self.save
-        return item.to_dict()
+        return item.to_ha()
 
     async def async_clear_completed(self):
         """Clear completed items."""
-        for itm in [itm for itm in self.items if itm["complete"]]:
-            await self.bring.remove_item(ShoppingItem(itm))
-        self.items = [itm for itm in self.items if not itm["complete"]]
+        to_remove = []
+        for key, itm in self.map_items.items():
+            if itm.complete:
+                self.bring.remove_item(itm)
+                self.remove(self.bring.recent_list, itm)
+                self.remove(self.items, itm.to_ha())
+                to_remove.append(key)
+        for key in to_remove:
+            self.map_items.pop(key)
         await self.save
 
-    def find_item(self, item):
-        """Find a Bring item in the shopping list"""
-        index = 0
-        for itm in self.items:
-            if itm["name"] == item.name:
-                break
-            index = index + 1
-        return index
-
     async def sync_bring(self):
-        await self.bring.update_lists()
+        await self.bring.update_lists(self.map_items)
 
-        for itm in self.bring.purchase_list:
-            if self.find_item(itm) == len(self.items):
-                self.items.append(itm.to_dict())
+        for itm in self.bring.purchase_list + self.bring.recent_list:
+            self.map_items[itm.id] = itm
 
-        for itm in self.bring.recent_list:
-            if self.find_item(itm) < len(self.items):
-                self.items[self.find_item(itm)]["complete"] = True
-
-        for itm in self.items:
-            if itm["complete"]:
-                if itm not in self.bring.recent_list:
-                    await self.bring.recent_item(ShoppingItem(itm))
-            else:
-                if itm not in self.bring.purchase_list:
-                    await self.bring.purchase_item(ShoppingItem(itm))
+        self.items = [itm.to_ha() for k, itm in self.map_items.items()]
 
     async def async_load(self):
         """Load items."""
@@ -320,6 +392,8 @@ class ShoppingData:
             return load_json(self.hass.config.path(PERSISTENCE), default=[])
 
         self.items = await self.hass.async_add_executor_job(load)
+        for itm in self.items:
+            self.map_items[itm["id"]] = self.ha_to_shopping_item(itm)
         await self.sync_bring()
 
     async def save(self):
