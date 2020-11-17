@@ -125,8 +125,7 @@ async def async_setup_entry(hass, config_entry):
 
     async def sync_bring_service(call):
         """Sync with Bring List"""
-        data = hass.data[DOMAIN]
-        data.sync_bring()
+        await hass.data[DOMAIN].sync_bring()
 
     username = hass.data[DOMAIN][CONF_BRING_USERNAME]
     password = hass.data[DOMAIN][CONF_BRING_PASSWORD]
@@ -347,7 +346,7 @@ class ShoppingData:
             if " [" in name:
                 specification = name[name.index(" [") + 2 : len(name) - 1]
                 name = name[0 : name.index(" [")]
-            self.bring.remove_item(item)
+            await self.bring.remove_item(item)
             item.name = name
             item.specification = specification
             item.id = name
@@ -368,7 +367,7 @@ class ShoppingData:
         to_remove = []
         for key, itm in self.map_items.items():
             if itm.complete:
-                self.bring.remove_item(itm)
+                await self.bring.remove_item(itm)
                 self.remove(self.bring.recent_list, itm)
                 self.remove(self.items, itm.to_ha())
                 to_remove.append(key)
@@ -381,7 +380,9 @@ class ShoppingData:
         await self.bring.update_lists(self.map_items)
 
         for itm in self.bring.purchase_list + self.bring.recent_list:
-            self.map_items[itm.id] = itm
+            if itm != self.map_items[itm.id]:
+                _LOGGER.debug("Update item: %s", str(itm))
+                self.map_items[itm.id] = itm
 
         self.items = [itm.to_ha() for k, itm in self.map_items.items()]
 
