@@ -380,9 +380,7 @@ class ShoppingData:
         await self.bring.update_lists(self.map_items)
 
         for itm in self.bring.purchase_list + self.bring.recent_list:
-            if itm != self.map_items[itm.id]:
-                _LOGGER.debug("Update item: %s", str(itm))
-                self.map_items[itm.id] = itm
+            self.map_items[itm.id] = itm
 
         self.items = [itm.to_ha() for k, itm in self.map_items.items()]
 
