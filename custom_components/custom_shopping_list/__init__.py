@@ -1,4 +1,5 @@
 """Support to manage a shopping list."""
+import asyncio
 import logging
 import uuid
 
@@ -325,7 +326,8 @@ class ShoppingData:
         self.items.append(item.to_ha())
         await self.bring.purchase_item(item)
         self.map_items[item.id] = item
-        await self.save
+        await self.sync_bring()
+        await self.hass.async_add_executor_job(self.save)
         return item.to_ha()
 
     async def async_update(self, item_id, info):
@@ -357,7 +359,8 @@ class ShoppingData:
         else:
             await self.bring.purchase_item(item)
         self.update_item(item_id, item)
-        await self.save
+        await self.sync_bring()
+        await self.hass.async_add_executor_job(self.save)
         return item.to_ha()
 
     async def async_clear_completed(self):
@@ -371,7 +374,8 @@ class ShoppingData:
                 to_remove.append(key)
         for key in to_remove:
             self.map_items.pop(key)
-        await self.save
+        await self.sync_bring()
+        await self.hass.async_add_executor_job(self.save)
 
     async def sync_bring(self):
         await self.bring.update_lists(self.map_items)
@@ -393,12 +397,9 @@ class ShoppingData:
             self.map_items[itm["id"]] = self.ha_to_shopping_item(itm)
         await self.sync_bring()
 
-    async def save(self):
+    def save(self):
         """Save the items."""
-        await self.sync_bring()
-        await self.hass.async_add_executor_job(
-            save_json(self.hass.config.path(PERSISTENCE), self.items)
-        )
+        save_json(self.hass.config.path(PERSISTENCE), self.items)
 
 
 class ShoppingListView(http.HomeAssistantView):

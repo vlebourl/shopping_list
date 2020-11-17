@@ -107,7 +107,7 @@ class BringApi:
     ) -> None:
         """ Make a PUT request to the TaHoma API """
         async with self.session.put(
-            f"{self._bringRestURL}{endpoint}",
+            f"{BRING_URL}{endpoint}",
             headers=headers,
             data=data,
             json=payload,
