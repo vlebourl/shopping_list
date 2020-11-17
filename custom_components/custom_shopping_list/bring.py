@@ -30,6 +30,8 @@ Until then: Thanks to Bring! Labs for their great service!
 Made with ❤ and no ☕ in Germany
 """
 
+BRING_URL = "https://api.getbring.com/rest/"
+
 
 class AuthentificationFailed(Exception):
     pass
@@ -41,7 +43,6 @@ class BringApi:
     ) -> None:
         self.username = username
         self.password = password
-        self._bringRestURL = "https://api.getbring.com/rest/"
         self._translations = None
         self.bringUUID = ""
         self.bringListUUID = ""
@@ -66,10 +67,15 @@ class BringApi:
         """ Check the response returned by the TaHoma API"""
         if response.status in [200, 204]:
             return
+        if response.status == 404:
+            raise Exception(response.url, response.reason)
+
         try:
             result = await response.json(content_type=None)
         except JSONDecodeError:
             result = await response.text()
+        if not result:
+            print("none")
         if result.get("errorCode"):
             message = result.get("error")
 
@@ -77,6 +83,7 @@ class BringApi:
 
     async def __get(
         self,
+        url: str,
         endpoint: str,
         headers: Optional[JSON] = None,
         payload: Optional[JSON] = None,
@@ -85,7 +92,7 @@ class BringApi:
     ) -> Any:
         """ Make a GET request to the TaHoma API """
         async with self.session.get(
-            f"{self._bringRestURL}{endpoint}", headers=headers, data=data, json=payload, params=params,
+            f"{url}{endpoint}", headers=headers, data=data, json=payload, params=params,
         ) as response:
             await self.check_response(response)
             return await response.json()
@@ -100,14 +107,18 @@ class BringApi:
     ) -> None:
         """ Make a PUT request to the TaHoma API """
         async with self.session.put(
-            f"{self._bringRestURL}{endpoint}", headers=headers, data=data, json=payload, params=params,
+            f"{self._bringRestURL}{endpoint}",
+            headers=headers,
+            data=data,
+            json=payload,
+            params=params,
         ) as response:
             await self.check_response(response)
 
     async def login(self) -> None:
         try:
             params = {"email": self.username, "password": self.password}
-            login = await self.__get("bringlists", params=params)
+            login = await self.__get(BRING_URL, "bringlists", params=params)
             self.bringUUID = login["uuid"]
             self.bringListUUID = login["bringListUUID"]
             self.headers = {
@@ -139,11 +150,11 @@ class BringApi:
             await self.login()
 
         items = await self.__get(
-            f"bringlists/{self.bringListUUID}", headers=self.headers
+            BRING_URL, f"bringlists/{self.bringListUUID}", headers=self.headers
         )
 
         if locale:
-            transl = self.load_translations(locale)
+            transl = await self.load_translations(locale)
             for item in items["purchase"]:
                 item["name"] = transl.get(item["name"]) or item["name"]
             for item in items["recently"]:
@@ -153,7 +164,7 @@ class BringApi:
     # return the details: Name, Image, UUID
     async def get_items_detail(self) -> dict:
         items = await self.__get(
-            f"bringlists/{self.bringListUUID}/details", headers=self.headers,
+            BRING_URL, f"bringlists/{self.bringListUUID}/details", headers=self.headers,
         )
         return items
 
@@ -184,35 +195,41 @@ class BringApi:
     # NOT WORKING!
     async def search_item(self, search):
         params = {"listUuid": self.bringListUUID, "itemId": search}
-        return await self.__get("bringlistitemdetails/", params=params, headers=self.headers,)
+        return await self.__get(
+            BRING_URL, "bringlistitemdetails/", params=params, headers=self.headers,
+        )
 
     # // Hidden Icons? Don't know what this is used for
     async def load_products(self):
-        return await self.__get(("bringproducts", headers=self.headers)
+        return await self.__get(BRING_URL, "bringproducts", headers=self.headers)
 
     # // Found Icons? Don't know what this is used for
     async def load_features(self):
         return await self.__get(
-            f"bringusers/{self.bringUUID}/features", headers=self.headers,
+            BRING_URL, f"bringusers/{self.bringUUID}/features", headers=self.headers,
         )
 
     # load all list infos
     async def load_lists(self):
-        return await self.__get(f"bringusers/{self.bringUUID}/lists", headers=self.headers,)
+        return await self.__get(
+            BRING_URL, f"bringusers/{self.bringUUID}/lists", headers=self.headers,
+        )
 
     # get list of all users in list ID
     async def get_users_from_list(self, listUUID):
-        return await self.__get(f"bringlists/{listUUID}/users", headers=self.headers)
+        return await self.__get(BRING_URL, f"bringlists/{listUUID}/users", headers=self.headers)
 
     # get settings from user
     async def get_user_settings(self):
-        return await self.__get(f"bringusersettings/{self.bringUUID}", headers=self.headers,)
+        return await self.__get(
+            BRING_URL, f"bringusersettings/{self.bringUUID}", headers=self.headers,
+        )
 
     # Load translation file e. g. via 'de-DE'
     async def load_translations(self, locale):
         if not self._translations:
             self._translations = await self.__get(
-                f"https://web.getbring.com/locale/articles.{locale}.json"
+                "https://web.getbring.com/", f"locale/articles.{locale}.json"
             )
         return self._translations
 
@@ -224,4 +241,6 @@ class BringApi:
 
     # Load localized catalag of items
     async def load_catalog(self, locale):
-        return self.__get(f"https://web.getbring.com/locale/catalog.{locale}.json")
+        return self.__get(
+            "https://web.getbring.com/", f"locale/catalog.{locale}.json"
+        )
