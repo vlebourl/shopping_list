@@ -220,16 +220,16 @@ class BringData:
         self.recent_list = []
 
     @staticmethod
-    def bring_to_shopping(bitm, map, complete):
-        id = bitm["name"]
-        for key, itm in map.items():
+    def bring_to_shopping(bitm, item_map, complete):
+        name = bitm["name"]
+        for key, itm in item_map.items():
             if bitm["name"] == itm.name and bitm["specification"] == itm.specification:
-                id = key
+                name = key
                 break
         return ShoppingItem(
             {
                 "name": bitm["name"],
-                "id": id,
+                "id": name,
                 "specification": bitm["specification"],
                 "complete": complete,
             }

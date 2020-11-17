@@ -85,7 +85,7 @@ class BringApi:
     ) -> Any:
         """ Make a GET request to the TaHoma API """
         async with self.session.get(
-            f"{endpoint}", headers=headers, data=data, json=payload, params=params,
+            f"{self._bringRestURL}{endpoint}", headers=headers, data=data, json=payload, params=params,
         ) as response:
             await self.check_response(response)
             return await response.json()
@@ -100,7 +100,7 @@ class BringApi:
     ) -> None:
         """ Make a PUT request to the TaHoma API """
         async with self.session.put(
-            f"{endpoint}", headers=headers, data=data, json=payload, params=params,
+            f"{self._bringRestURL}{endpoint}", headers=headers, data=data, json=payload, params=params,
         ) as response:
             await self.check_response(response)
 
@@ -184,34 +184,34 @@ class BringApi:
     # NOT WORKING!
     async def search_item(self, search):
         params = {"listUuid": self.bringListUUID, "itemId": search}
-        return self.__get("bringlistitemdetails/", params=params, headers=self.headers,)
+        return await self.__get("bringlistitemdetails/", params=params, headers=self.headers,)
 
     # // Hidden Icons? Don't know what this is used for
     async def load_products(self):
-        return self.__get("bringproducts", headers=self.headers)
+        return await ("bringproducts", headers=self.headers)
 
     # // Found Icons? Don't know what this is used for
     async def load_features(self):
-        return self.__get(
+        return await self.__get(
             f"bringusers/{self.bringUUID}/features", headers=self.headers,
         )
 
     # load all list infos
     async def load_lists(self):
-        return self.__get(f"bringusers/{self.bringUUID}/lists", headers=self.headers,)
+        return await self.__get(f"bringusers/{self.bringUUID}/lists", headers=self.headers,)
 
     # get list of all users in list ID
     async def get_users_from_list(self, listUUID):
-        return self.__get(f"bringlists/{listUUID}/users", headers=self.headers)
+        return await self.__get(f"bringlists/{listUUID}/users", headers=self.headers)
 
     # get settings from user
     async def get_user_settings(self):
-        return self.__get(f"bringusersettings/{self.bringUUID}", headers=self.headers,)
+        return await self.__get(f"bringusersettings/{self.bringUUID}", headers=self.headers,)
 
     # Load translation file e. g. via 'de-DE'
     async def load_translations(self, locale):
         if not self._translations:
-            self._translations = self.__get(
+            self._translations = await self.__get(
                 f"https://web.getbring.com/locale/articles.{locale}.json"
             )
         return self._translations
