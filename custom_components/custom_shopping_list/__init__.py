@@ -230,7 +230,6 @@ class ShoppingItem:
 class BringData:
     """Class to hold a Bring shopping list data."""
 
-c
     def __init__(self, username, password, language, session) -> None:
         self.api = BringApi(username, password, session)
         self.language = language
