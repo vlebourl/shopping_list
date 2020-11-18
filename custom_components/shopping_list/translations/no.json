@@ -6,7 +6,11 @@
         "step": {
             "user": {
                 "description": "\u00d8nsker du \u00e5 konfigurere handleliste?",
-                "title": "Handleliste"
+                "title": "Handleliste",
+                "data": {
+                  "username": "Username",
+                  "password": "Password"
+                }
             }
         }
     },

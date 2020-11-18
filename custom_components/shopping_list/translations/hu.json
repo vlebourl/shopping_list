@@ -6,7 +6,11 @@
         "step": {
             "user": {
                 "description": "Be szeretn\u00e9d \u00e1ll\u00edtani a bev\u00e1s\u00e1rl\u00f3list\u00e1t?",
-                "title": "Bev\u00e1s\u00e1rl\u00f3lista"
+                "title": "Bev\u00e1s\u00e1rl\u00f3lista",
+                "data": {
+                  "username": "Username",
+                  "password": "Password"
+                }
             }
         }
     },

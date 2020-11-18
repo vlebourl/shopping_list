@@ -6,7 +6,11 @@
         "step": {
             "user": {
                 "description": "M\u00f6chten Sie die Einkaufsliste konfigurieren?",
-                "title": "Einkaufsliste"
+                "title": "Einkaufsliste",
+                "data": {
+                  "username": "Username",
+                  "password": "Password"
+                }
             }
         }
     },

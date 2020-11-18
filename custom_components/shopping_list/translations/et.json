@@ -6,7 +6,11 @@
         "step": {
             "user": {
                 "description": "Kas soovid seadistada ostunimekirja?",
-                "title": "Ostunimekiri"
+                "title": "Ostunimekiri",
+                "data": {
+                  "username": "Username",
+                  "password": "Password"
+                }
             }
         }
     },

@@ -6,7 +6,11 @@
         "step": {
             "user": {
                 "description": "Voulez-vous configurer la liste d'achats ?",
-                "title": "Liste d'achats"
+                "title": "Liste d'achats",
+                "data": {
+                  "username": "Email",
+                  "password": "Mot de Passe"
+                }        
             }
         }
     },

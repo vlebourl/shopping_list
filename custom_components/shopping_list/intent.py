@@ -1,6 +1,6 @@
 """Intents for the Shopping List integration."""
-from homeassistant.helpers import intent
 import homeassistant.helpers.config_validation as cv
+from homeassistant.helpers import intent
 
 from . import DOMAIN, EVENT
 

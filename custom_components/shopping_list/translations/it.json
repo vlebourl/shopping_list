@@ -6,7 +6,11 @@
         "step": {
             "user": {
                 "description": "Vuoi configurare la lista della spesa?",
-                "title": "Lista della Spesa"
+                "title": "Lista della Spesa",
+                "data": {
+                  "username": "Username",
+                  "password": "Password"
+                }
             }
         }
     },

@@ -6,7 +6,11 @@
         "step": {
             "user": {
                 "description": "Vols configurar la llista de compres?",
-                "title": "Llista de compres"
+                "title": "Llista de compres",
+                "data": {
+                  "username": "Username",
+                  "password": "Password"
+                }
             }
         }
     },
