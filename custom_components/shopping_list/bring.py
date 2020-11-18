@@ -39,7 +39,10 @@ class AuthentificationFailed(Exception):
 
 class BringApi:
     def __init__(
-        self, username: str, password: str, session: ClientSession = None,
+        self,
+        username: str,
+        password: str,
+        session: ClientSession = None,
     ) -> None:
         self.username = username
         self.password = password
@@ -95,7 +98,11 @@ class BringApi:
     ) -> Any:
         """ Make a GET request to the TaHoma API """
         async with self.session.get(
-            f"{url}{endpoint}", headers=headers, data=data, json=payload, params=params,
+            f"{url}{endpoint}",
+            headers=headers,
+            data=data,
+            json=payload,
+            params=params,
         ) as response:
             await self.check_response(response)
             return await response.json()
@@ -155,7 +162,9 @@ class BringApi:
 
     async def select_list(self, name):
         await self.get_lists()
-        selected = next((_list for _list in self.lists if _list.get("name") == name), None)
+        selected = next(
+            (_list for _list in self.lists if _list.get("name") == name), None
+        )
         if not selected:
             raise ValueError(f"List {name} does not exist")
         self.bringListUUID = selected.get("listUuid")
@@ -178,7 +187,9 @@ class BringApi:
     # return the details: Name, Image, UUID
     async def get_items_detail(self) -> dict:
         items = await self.__get(
-            BRING_URL, f"bringlists/{self.bringListUUID}/details", headers=self.headers,
+            BRING_URL,
+            f"bringlists/{self.bringListUUID}/details",
+            headers=self.headers,
         )
         return items
 
@@ -188,21 +199,27 @@ class BringApi:
         if specification:
             params["specification"] = specification
         await self.__put(
-            f"bringlists/{self.bringListUUID}", params=params, headers=self.addheaders,
+            f"bringlists/{self.bringListUUID}",
+            params=params,
+            headers=self.addheaders,
         )
 
     # add/move something to the recent items
     async def recent_item(self, item):
         params = {"recently": item}
         await self.__put(
-            f"bringlists/{self.bringListUUID}", params=params, headers=self.addheaders,
+            f"bringlists/{self.bringListUUID}",
+            params=params,
+            headers=self.addheaders,
         )
 
     # remove an item completely (from recent and purchase)
     async def remove_item(self, item):
         params = {"remove": item}
         await self.__put(
-            f"bringlists/{self.bringListUUID}", params=params, headers=self.addheaders,
+            f"bringlists/{self.bringListUUID}",
+            params=params,
+            headers=self.addheaders,
         )
 
     # search for an item in the list
@@ -210,7 +227,10 @@ class BringApi:
     async def search_item(self, search):
         params = {"listUuid": self.bringListUUID, "itemId": search}
         return await self.__get(
-            BRING_URL, "bringlistitemdetails/", params=params, headers=self.headers,
+            BRING_URL,
+            "bringlistitemdetails/",
+            params=params,
+            headers=self.headers,
         )
 
     # // Hidden Icons? Don't know what this is used for
@@ -220,23 +240,31 @@ class BringApi:
     # // Found Icons? Don't know what this is used for
     async def load_features(self):
         return await self.__get(
-            BRING_URL, f"bringusers/{self.bringUUID}/features", headers=self.headers,
+            BRING_URL,
+            f"bringusers/{self.bringUUID}/features",
+            headers=self.headers,
         )
 
     # load all list infos
     async def load_lists(self):
         return await self.__get(
-            BRING_URL, f"bringusers/{self.bringUUID}/lists", headers=self.headers,
+            BRING_URL,
+            f"bringusers/{self.bringUUID}/lists",
+            headers=self.headers,
         )
 
     # get list of all users in list ID
     async def get_users_from_list(self, listUUID):
-        return await self.__get(BRING_URL, f"bringlists/{listUUID}/users", headers=self.headers)
+        return await self.__get(
+            BRING_URL, f"bringlists/{listUUID}/users", headers=self.headers
+        )
 
     # get settings from user
     async def get_user_settings(self):
         return await self.__get(
-            BRING_URL, f"bringusersettings/{self.bringUUID}", headers=self.headers,
+            BRING_URL,
+            f"bringusersettings/{self.bringUUID}",
+            headers=self.headers,
         )
 
     # Load translation file e. g. via 'de-DE'
@@ -255,6 +283,4 @@ class BringApi:
 
     # Load localized catalag of items
     async def load_catalog(self, locale):
-        return self.__get(
-            "https://web.getbring.com/", f"locale/catalog.{locale}.json"
-        )
+        return self.__get("https://web.getbring.com/", f"locale/catalog.{locale}.json")

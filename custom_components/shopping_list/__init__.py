@@ -1,36 +1,31 @@
 """Support to manage a shopping list."""
 import logging
 
-import homeassistant.helpers.config_validation as cv
-import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.components import http, websocket_api
 from homeassistant.components.http.data_validator import RequestDataValidator
-from homeassistant.const import CONF_PASSWORD, CONF_USERNAME, HTTP_BAD_REQUEST, HTTP_NOT_FOUND
+from homeassistant.const import (
+    CONF_PASSWORD,
+    CONF_USERNAME,
+    HTTP_BAD_REQUEST,
+    HTTP_NOT_FOUND,
+)
 from homeassistant.core import callback
 from homeassistant.helpers import aiohttp_client
+import homeassistant.helpers.config_validation as cv
 from homeassistant.util.json import load_json, save_json
+import voluptuous as vol
 
 from .bring import BringApi
 from .const import DOMAIN
 
 ATTR_NAME = "name"
 
-CONF_BRING_USERNAME = "bring_username"
-CONF_BRING_PASSWORD = "bring_password"
-CONF_BRING_LANGUAGE = "bring_language"
+CONF_LOCALE = "locale"
+CONF_LIST_NAME = "list_name"
 
 _LOGGER = logging.getLogger(__name__)
-CONFIG_SCHEMA = vol.Schema(
-    {
-        DOMAIN: {
-            vol.Required(CONF_BRING_USERNAME): str,
-            vol.Required(CONF_BRING_PASSWORD): str,
-            vol.Optional(CONF_BRING_LANGUAGE, default="en-EN"): str,
-        }
-    },
-    extra=vol.ALLOW_EXTRA,
-)
+CONFIG_SCHEMA = vol.Schema({DOMAIN: {}}, extra=vol.ALLOW_EXTRA)
 
 EVENT = "shopping_list_updated"
 ITEM_UPDATE_SCHEMA = vol.Schema({"complete": bool, ATTR_NAME: str})
@@ -77,21 +72,6 @@ async def async_setup(hass, config):
     if DOMAIN not in config:
         return True
 
-    config = config.get(DOMAIN)
-    if config is None:
-        hass.data[DOMAIN] = {
-            CONF_BRING_USERNAME: "",
-            CONF_BRING_PASSWORD: "",
-            CONF_BRING_LANGUAGE: "",
-        }
-        return True
-
-    hass.data[DOMAIN] = {
-        CONF_BRING_USERNAME: config[CONF_BRING_USERNAME],
-        CONF_BRING_PASSWORD: config[CONF_BRING_PASSWORD],
-        CONF_BRING_LANGUAGE: config[CONF_BRING_LANGUAGE],
-    }
-
     hass.async_create_task(
         hass.config_entries.flow.async_init(
             DOMAIN, context={"source": config_entries.SOURCE_IMPORT}
@@ -99,6 +79,24 @@ async def async_setup(hass, config):
     )
 
     return True
+
+
+async def async_options_updated(hass, entry):
+    """Triggered by config entry options updates."""
+    locale = entry.options[CONF_LOCALE]
+    list_name = entry.options[CONF_LIST_NAME]
+    data = hass.data[DOMAIN]
+    if data.bring.language != locale:
+        bring_data = BringData(
+            entry.data.get("username"),
+            entry.data.get("password"),
+            locale,
+            data.bring.api.session,
+        )
+        await bring_data.api.login()
+        await bring_data.load_catalog()
+        data.bring = bring_data
+    await data.switch_list(list_name)
 
 
 async def async_setup_entry(hass, config_entry):
@@ -135,9 +133,12 @@ async def async_setup_entry(hass, config_entry):
 
         await data.switch_list(name)
 
+    config_entry.add_update_listener(async_options_updated)
+
     username = config_entry.data.get(CONF_USERNAME)
     password = config_entry.data.get(CONF_PASSWORD)
-    language = config_entry.data.get(CONF_BRING_LANGUAGE) or "en-EN"
+    language = config_entry.options.get(CONF_LOCALE)
+    list_name = config_entry.options.get(CONF_LIST_NAME)
 
     session = aiohttp_client.async_create_clientsession(hass)
     bring_data = BringData(username, password, language, session)
@@ -148,6 +149,7 @@ async def async_setup_entry(hass, config_entry):
         hass, username, password, language, bring_data
     )
     await data.async_load()
+    await data.switch_list(list_name)
 
     hass.services.async_register(
         DOMAIN, SERVICE_ADD_ITEM, add_item_service, schema=SERVICE_ITEM_SCHEMA
@@ -159,7 +161,10 @@ async def async_setup_entry(hass, config_entry):
         DOMAIN, SERVICE_BRING_SYNC, bring_sync_service, schema={}
     )
     hass.services.async_register(
-        DOMAIN, SERVICE_BRING_SELECT_LIST, bring_select_list_service, schema=SERVICE_BRING_SELECT_LIST_SCHEMA
+        DOMAIN,
+        SERVICE_BRING_SELECT_LIST,
+        bring_select_list_service,
+        schema=SERVICE_BRING_SELECT_LIST_SCHEMA,
     )
 
     hass.http.register_view(ShoppingListView)

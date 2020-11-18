@@ -14,5 +14,17 @@
             }
         }
     },
-    "title": "\u8cfc\u7269\u6e05\u55ae"
+    "title": "\u8cfc\u7269\u6e05\u55ae",
+    "options": {
+      "step": {
+        "locale_and_list": {
+          "title": "Bring Options",
+          "description": "Choose the locale and the list to synchronize",
+          "data": {
+            "locale": "A Locale (eg. en-EN)",
+            "list_name": "Bring list to synchronize"
+          }
+        }
+      }
+    }
 }

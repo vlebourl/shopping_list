@@ -14,5 +14,17 @@
             }
         }
     },
-    "title": "Akafsl\u00ebscht"
+    "title": "Akafsl\u00ebscht",
+    "options": {
+      "step": {
+        "locale_and_list": {
+          "title": "Bring Options",
+          "description": "Choose the locale and the list to synchronize",
+          "data": {
+            "locale": "A Locale (eg. en-EN)",
+            "list_name": "Bring list to synchronize"
+          }
+        }
+      }
+    }
 }
