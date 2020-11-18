@@ -46,10 +46,12 @@ class BringApi:
         self._translations = None
         self.bringUUID = ""
         self.bringListUUID = ""
+        self.lists = []
         self.headers = {}
         self.addheaders = {}
         self.session = session if session else ClientSession()
         self.logged = False
+        self.selected_list = "Default"
 
     async def __aenter__(self) -> BringApi:
         return self
@@ -76,6 +78,7 @@ class BringApi:
             result = await response.text()
         if not result:
             print("none")
+        message = None
         if result.get("errorCode"):
             message = result.get("error")
 
@@ -144,11 +147,22 @@ class BringApi:
         """Close the session."""
         await self.session.close()
 
+    async def get_lists(self) -> None:
+        lists = await self.__get(
+            BRING_URL, f"bringusers/{self.bringUUID}/lists", headers=self.headers
+        )
+        self.lists = lists.get("lists")
+
+    async def select_list(self, name):
+        await self.get_lists()
+        selected = next((_list for _list in self.lists if _list.get("name") == name), None)
+        if not selected:
+            raise ValueError(f"List {name} does not exist")
+        self.bringListUUID = selected.get("listUuid")
+        self.selected_list = selected.get("name")
+
     # return list of items from current list as well as recent items - translated if requested
     async def get_items(self, locale=None) -> dict:
-        if not self.logged:
-            await self.login()
-
         items = await self.__get(
             BRING_URL, f"bringlists/{self.bringListUUID}", headers=self.headers
         )

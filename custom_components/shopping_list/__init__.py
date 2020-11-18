@@ -1,7 +1,5 @@
 """Support to manage a shopping list."""
-import asyncio
 import logging
-import uuid
 
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
@@ -21,6 +19,7 @@ ATTR_NAME = "name"
 CONF_BRING_USERNAME = "bring_username"
 CONF_BRING_PASSWORD = "bring_password"
 CONF_BRING_LANGUAGE = "bring_language"
+CONF_BRING_LIST_NAME = "bring_list_name"
 
 _LOGGER = logging.getLogger(__name__)
 CONFIG_SCHEMA = vol.Schema(
@@ -29,19 +28,23 @@ CONFIG_SCHEMA = vol.Schema(
             vol.Required(CONF_BRING_USERNAME): str,
             vol.Required(CONF_BRING_PASSWORD): str,
             vol.Optional(CONF_BRING_LANGUAGE, default="en-EN"): str,
+            vol.Optional(CONF_BRING_LIST_NAME, default=""): str,
         }
     },
     extra=vol.ALLOW_EXTRA,
 )
+
 EVENT = "shopping_list_updated"
 ITEM_UPDATE_SCHEMA = vol.Schema({"complete": bool, ATTR_NAME: str})
 PERSISTENCE = ".shopping_list.json"
 
 SERVICE_ADD_ITEM = "add_item"
 SERVICE_COMPLETE_ITEM = "complete_item"
-SERVICE_SYNC_BRING = "sync_bring"
+SERVICE_BRING_SYNC = "bring_sync"
+SERVICE_BRING_SELECT_LIST = "bring_select_list"
 
 SERVICE_ITEM_SCHEMA = vol.Schema({vol.Required(ATTR_NAME): vol.Any(None, cv.string)})
+SERVICE_BRING_SELECT_LIST_SCHEMA = vol.Schema({vol.Required(ATTR_NAME): str})
 
 WS_TYPE_SHOPPING_LIST_ITEMS = "shopping_list/items"
 WS_TYPE_SHOPPING_LIST_ADD_ITEM = "shopping_list/items/add"
@@ -82,6 +85,7 @@ async def async_setup(hass, config):
             CONF_BRING_USERNAME: "",
             CONF_BRING_PASSWORD: "",
             CONF_BRING_LANGUAGE: "",
+            CONF_BRING_LIST_NAME: "",
         }
         return True
 
@@ -89,6 +93,7 @@ async def async_setup(hass, config):
         CONF_BRING_USERNAME: config[CONF_BRING_USERNAME],
         CONF_BRING_PASSWORD: config[CONF_BRING_PASSWORD],
         CONF_BRING_LANGUAGE: config[CONF_BRING_LANGUAGE],
+        CONF_BRING_LIST_NAME: config[CONF_BRING_LIST_NAME],
     }
 
     hass.async_create_task(
@@ -123,13 +128,23 @@ async def async_setup_entry(hass, config_entry):
         else:
             await data.async_update(item["id"], {"name": name, "complete": True})
 
-    async def sync_bring_service(call):
+    async def bring_sync_service(call):
         """Sync with Bring List"""
         await hass.data[DOMAIN].sync_bring()
+
+    async def bring_select_list_service(call):
+        """Select which Bring List HA should synchronize with"""
+        data = hass.data[DOMAIN]
+        name = call.data.get(ATTR_NAME)
+
+        await data.switch_list(name)
 
     username = hass.data[DOMAIN][CONF_BRING_USERNAME]
     password = hass.data[DOMAIN][CONF_BRING_PASSWORD]
     language = hass.data[DOMAIN][CONF_BRING_LANGUAGE]
+    list_name = hass.data[DOMAIN][CONF_BRING_LIST_NAME]
+
+    _LOGGER.debug("Selected list: %s", list_name)
 
     session = aiohttp_client.async_create_clientsession(hass)
     bring_data = BringData(username, password, language, session)
@@ -148,7 +163,10 @@ async def async_setup_entry(hass, config_entry):
         DOMAIN, SERVICE_COMPLETE_ITEM, complete_item_service, schema=SERVICE_ITEM_SCHEMA
     )
     hass.services.async_register(
-        DOMAIN, SERVICE_SYNC_BRING, sync_bring_service, schema={}
+        DOMAIN, SERVICE_BRING_SYNC, bring_sync_service, schema={}
+    )
+    hass.services.async_register(
+        DOMAIN, SERVICE_BRING_SELECT_LIST, bring_select_list_service, schema=SERVICE_BRING_SELECT_LIST_SCHEMA
     )
 
     hass.http.register_view(ShoppingListView)
@@ -375,6 +393,11 @@ class ShoppingData:
             self.map_items.pop(key)
         await self.sync_bring()
         await self.hass.async_add_executor_job(self.save)
+
+    async def switch_list(self, list_name):
+        self.map_items = {}
+        await self.bring.api.select_list(list_name)
+        await self.sync_bring()
 
     async def sync_bring(self):
         await self.bring.update_lists(self.map_items)

@@ -10,5 +10,11 @@ complete_item:
     name:
       description: The name of the item to mark as completed.
       example: Beer
-sync_bring:
+bring_sync:
   description: Syncs with Bring Shopping List.
+bring_select_list:
+  description: Select which list Bring should synchronize with.
+  fields:
+    name:
+      description: The name of the Bring list.
+      example: Shopping
