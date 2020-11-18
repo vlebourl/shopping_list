@@ -1,3 +1,5 @@
+.vscode/
+custom_components/shopping_list/__pycache__/
 custom_components/shopping_list/scratch.py
-.vscode/settings.json
-custom_components/shopping_list/__pycache__/bring.cpython-38.pyc
+venv/
+Config/
