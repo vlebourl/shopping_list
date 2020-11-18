@@ -1,0 +1,5 @@
+.vscode/
+custom_components/shopping_list/__pycache__/
+custom_components/shopping_list/scratch.py
+venv/
+Config/
