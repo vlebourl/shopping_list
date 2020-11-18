@@ -1,8 +1,8 @@
 """Support to manage a shopping list."""
 import logging
-
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
+
 from homeassistant import config_entries
 from homeassistant.components import http, websocket_api
 from homeassistant.components.http.data_validator import RequestDataValidator
@@ -138,7 +138,6 @@ async def async_setup_entry(hass, config_entry):
         name = call.data.get(ATTR_NAME)
 
         await data.switch_list(name)
-
     username = hass.data[DOMAIN][CONF_BRING_USERNAME]
     password = hass.data[DOMAIN][CONF_BRING_PASSWORD]
     language = hass.data[DOMAIN][CONF_BRING_LANGUAGE]
@@ -154,6 +153,7 @@ async def async_setup_entry(hass, config_entry):
     data = hass.data[DOMAIN] = ShoppingData(
         hass, username, password, language, bring_data
     )
+
     await data.async_load()
 
     hass.services.async_register(
@@ -230,6 +230,7 @@ class ShoppingItem:
 class BringData:
     """Class to hold a Bring shopping list data."""
 
+c
     def __init__(self, username, password, language, session) -> None:
         self.api = BringApi(username, password, session)
         self.language = language
@@ -248,6 +249,7 @@ class BringData:
             {
                 "name": bitm["name"],
                 "id": name,
+
                 "specification": bitm["specification"],
                 "complete": complete,
             }
