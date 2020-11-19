@@ -33,7 +33,7 @@ Items added, checked or removed from the list in HA are automatically synced wit
     seconds: '0'
   condition: []
   action:
-  - service: shopping_list.sync_bring
+  - service: shopping_list.bring_sync
     data: {}
   mode: single
 ```
