@@ -8,7 +8,7 @@ A custom implementation of Home Assistant's Shopping List that synchronises with
 
 ### HACS
 
-Add the repository url to your custom repositories in HACS: https://github.com/vlebourl/custom_shopping_list
+Add the repository url to your custom repositories in HACS: https://github.com/vlebourl/shopping_list
 and install `Shopping List`.
 
 ### Manual
