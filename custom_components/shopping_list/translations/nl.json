@@ -1,0 +1,38 @@
+{
+  "config": {
+    "abort": {
+      "already_configured": "De Shopping List is al geconfigureerd."
+    },
+    "step": {
+      "user": {
+        "description": "Wil je de Shopping List configureren?",
+        "title": "Shopping List",
+        "data": {
+          "username": "Username",
+          "password": "Password",
+          "locale": "A Locale (eg. en-EN)"
+        }
+      },
+      "list": {
+        "title": "Shopping List",
+        "description": "Choose the list to synchronize.",
+        "data": {
+          "list_name": "Bring list to synchronize"
+        }
+      }
+    }
+  },
+  "title": "Shopping List",
+  "options": {
+    "step": {
+      "locale_and_list": {
+        "title": "Bring Options",
+        "description": "Choose the locale and the list to synchronize",
+        "data": {
+          "locale": "A Locale (eg. en-EN)",
+          "list_name": "Bring list to synchronize"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "config": {
+    "abort": {
+      "already_configured": "Service ass scho konfigur\u00e9iert"
+    },
+    "step": {
+      "user": {
+        "description": "Soll Akafsl\u00ebscht konfigur\u00e9iert ginn?",
+        "title": "Akafsl\u00ebscht",
+        "data": {
+          "username": "Username",
+          "password": "Password",
+          "locale": "A Locale (eg. en-EN)"
+        }
+      },
+      "list": {
+        "title": "Shopping List",
+        "description": "Choose the list to synchronize.",
+        "data": {
+          "list_name": "Bring list to synchronize"
+        }
+      }
+    }
+  },
+  "title": "Akafsl\u00ebscht",
+  "options": {
+    "step": {
+      "locale_and_list": {
+        "title": "Bring Options",
+        "description": "Choose the locale and the list to synchronize",
+        "data": {
+          "locale": "A Locale (eg. en-EN)",
+          "list_name": "Bring list to synchronize"
+        }
+      }
+    }
+  }
+}

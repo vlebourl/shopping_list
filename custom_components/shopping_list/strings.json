@@ -1,0 +1,38 @@
+{
+  "title": "Shopping List",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Shopping List",
+        "description": "Do you want to configure the shopping list?",
+        "data": {
+          "username": "[%key:common::config_flow::data::username%]",
+          "password": "[%key:common::config_flow::data::password%]",
+          "locale": "A Locale (eg. en-EN)"
+        }
+      },
+      "list": {
+        "title": "Shopping List",
+        "description": "Choose the list to synchronize.",
+        "data": {
+          "list_name": "Bring list to synchronize"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "[%key:common::config_flow::abort::already_configured_service%]"
+    }
+  },
+  "options": {
+    "step": {
+      "locale_and_list": {
+        "title": "Bring Options",
+        "description": "Choose the locale and the list to synchronize",
+        "data": {
+          "locale": "A Locale (eg. en-EN)",
+          "list_name": "Bring list to synchronize"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "config": {
+    "abort": {
+      "already_configured": "Il servizio \u00e8 gi\u00e0 configurato"
+    },
+    "step": {
+      "user": {
+        "description": "Vuoi configurare la lista della spesa?",
+        "title": "Lista della Spesa",
+        "data": {
+          "username": "Username",
+          "password": "Password",
+          "locale": "A Locale (eg. en-EN)"
+        }
+      },
+      "list": {
+        "title": "Shopping List",
+        "description": "Choose the list to synchronize.",
+        "data": {
+          "list_name": "Bring list to synchronize"
+        }
+      }
+    }
+  },
+  "title": "Lista della Spesa",
+  "options": {
+    "step": {
+      "locale_and_list": {
+        "title": "Bring Options",
+        "description": "Choose the locale and the list to synchronize",
+        "data": {
+          "locale": "A Locale (eg. en-EN)",
+          "list_name": "Bring list to synchronize"
+        }
+      }
+    }
+  }
+}

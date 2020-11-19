@@ -1,0 +1,38 @@
+{
+  "config": {
+    "abort": {
+      "already_configured": "La liste d'achats est d\u00e9j\u00e0 configur\u00e9e."
+    },
+    "step": {
+      "user": {
+        "description": "Voulez-vous configurer la liste d'achats ?",
+        "title": "Liste d'achats",
+        "data": {
+          "username": "Email",
+          "password": "Mot de Passe",
+          "locale": "Une locale (ex. fr-FR)"
+        }
+      },
+      "list": {
+        "title": "Shopping List",
+        "description": "Choisissez la liste \u00e0 synchroniser.",
+        "data": {
+          "list_name": "List Bring \u00e0 synchroniser"
+        }
+      }
+    }
+  },
+  "title": "Liste d\u2019achats",
+  "options": {
+    "step": {
+      "locale_and_list": {
+        "title": "Options pour Bring",
+        "description": "Choisissez la locale et la liste \u00e0 synchroniser.",
+        "data": {
+          "locale": "Locale (ex: fr-FR)",
+          "list_name": "List Bring \u00e0 synchroniser"
+        }
+      }
+    }
+  }
+}

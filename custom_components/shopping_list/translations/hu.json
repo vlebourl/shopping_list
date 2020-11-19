@@ -1,0 +1,38 @@
+{
+  "config": {
+    "abort": {
+      "already_configured": "A bev\u00e1s\u00e1rl\u00f3lista m\u00e1r konfigur\u00e1lva van."
+    },
+    "step": {
+      "user": {
+        "description": "Be szeretn\u00e9d \u00e1ll\u00edtani a bev\u00e1s\u00e1rl\u00f3list\u00e1t?",
+        "title": "Bev\u00e1s\u00e1rl\u00f3lista",
+        "data": {
+          "username": "Username",
+          "password": "Password",
+          "locale": "A Locale (eg. en-EN)"
+        }
+      },
+      "list": {
+        "title": "Shopping List",
+        "description": "Choose the list to synchronize.",
+        "data": {
+          "list_name": "Bring list to synchronize"
+        }
+      }
+    }
+  },
+  "title": "Bev\u00e1s\u00e1rl\u00f3lista",
+  "options": {
+    "step": {
+      "locale_and_list": {
+        "title": "Bring Options",
+        "description": "Choose the locale and the list to synchronize",
+        "data": {
+          "locale": "A Locale (eg. en-EN)",
+          "list_name": "Bring list to synchronize"
+        }
+      }
+    }
+  }
+}

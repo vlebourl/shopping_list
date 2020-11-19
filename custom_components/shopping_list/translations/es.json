@@ -1,0 +1,38 @@
+{
+  "config": {
+    "abort": {
+      "already_configured": "El servicio ya est\u00e1 configurado"
+    },
+    "step": {
+      "user": {
+        "description": "\u00bfQuieres configurar la lista de la compra?",
+        "title": "Lista de la compra",
+        "data": {
+          "username": "Username",
+          "password": "Password",
+          "locale": "A Locale (eg. en-EN)"
+        }
+      },
+      "list": {
+        "title": "Shopping List",
+        "description": "Choose the list to synchronize.",
+        "data": {
+          "list_name": "Bring list to synchronize"
+        }
+      }
+    }
+  },
+  "title": "Lista de la compra",
+  "options": {
+    "step": {
+      "locale_and_list": {
+        "title": "Bring Options",
+        "description": "Choose the locale and the list to synchronize",
+        "data": {
+          "locale": "A Locale (eg. en-EN)",
+          "list_name": "Bring list to synchronize"
+        }
+      }
+    }
+  }
+}
