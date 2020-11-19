@@ -17,14 +17,7 @@ Download the [zip](https://github.com/vlebourl/custom_shopping_list/archive/main
 
 ## Usage
 
-To use it, add the following to your configuration.yaml:
-
-```yaml
-shopping_list:
-  bring_username: 'username'
-  bring_password: 'password'
-  bring_language: 'en-EN'
-```
+To use it, add the shopping list integration from the integration page and fill in your credentials, a locale, and choose the list to sync.
 
 Full list of supported language isn't known, language should follow the `locale` format, such as `de-DE`, `fr-FR`, `ch-FR`, etc.
 
