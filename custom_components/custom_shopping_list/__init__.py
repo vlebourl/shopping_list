@@ -137,7 +137,7 @@ async def async_setup_entry(hass, config_entry):
 
     username = config_entry.data.get(CONF_USERNAME)
     password = config_entry.data.get(CONF_PASSWORD)
-    language = config_entry.options.get(CONF_LOCALE)
+    language = config_entry.data.get(CONF_LOCALE)
     list_name = config_entry.options.get(CONF_LIST_NAME)
 
     session = aiohttp_client.async_create_clientsession(hass)
@@ -149,7 +149,8 @@ async def async_setup_entry(hass, config_entry):
         hass, username, password, language, bring_data
     )
     await data.async_load()
-    await data.switch_list(list_name)
+    if list_name:
+        await data.switch_list(list_name)
 
     hass.services.async_register(
         DOMAIN, SERVICE_ADD_ITEM, add_item_service, schema=SERVICE_ITEM_SCHEMA
