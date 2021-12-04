@@ -1,4 +1,5 @@
 """Support to manage a shopping list."""
+from http import HTTPStatus
 import logging
 
 from homeassistant import config_entries
@@ -6,9 +7,7 @@ from homeassistant.components import http, websocket_api
 from homeassistant.components.http.data_validator import RequestDataValidator
 from homeassistant.const import (
     CONF_PASSWORD,
-    CONF_USERNAME,
-    HTTP_BAD_REQUEST,
-    HTTP_NOT_FOUND,
+    CONF_USERNAME
 )
 from homeassistant.core import callback
 from homeassistant.helpers import aiohttp_client
@@ -450,9 +449,9 @@ class UpdateShoppingListItemView(http.HomeAssistantView):
             request.app["hass"].bus.async_fire(EVENT)
             return self.json(item)
         except KeyError:
-            return self.json_message("Item not found", HTTP_NOT_FOUND)
+            return self.json_message("Item not found", HTTPStatus.NOT_FOUND)
         except vol.Invalid:
-            return self.json_message("Item not found", HTTP_BAD_REQUEST)
+            return self.json_message("Item not found", HTTPStatus.BAD_REQUEST)
 
 
 class CreateShoppingListItemView(http.HomeAssistantView):
