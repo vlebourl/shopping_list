@@ -34,6 +34,7 @@ SERVICE_ADD_ITEM = "add_item"
 SERVICE_COMPLETE_ITEM = "complete_item"
 SERVICE_BRING_SYNC = "bring_sync"
 SERVICE_BRING_SELECT_LIST = "bring_select_list"
+SERVICE_REMOVE_COMPLETED_ITEMS = "remove_completed_items"
 
 SERVICE_ITEM_SCHEMA = vol.Schema({vol.Required(ATTR_NAME): vol.Any(None, cv.string)})
 SERVICE_BRING_SELECT_LIST_SCHEMA = vol.Schema({vol.Required(ATTR_NAME): str})
@@ -132,6 +133,10 @@ async def async_setup_entry(hass, config_entry):
 
         await data.switch_list(name)
 
+    async def remove_completed_items_service(call):
+        """Remove completed Items"""
+        await hass.data[DOMAIN].async_clear_completed()
+
     config_entry.add_update_listener(async_options_updated)
 
     username = config_entry.data.get(CONF_USERNAME)
@@ -165,6 +170,12 @@ async def async_setup_entry(hass, config_entry):
         SERVICE_BRING_SELECT_LIST,
         bring_select_list_service,
         schema=SERVICE_BRING_SELECT_LIST_SCHEMA,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_REMOVE_COMPLETED_ITEMS,
+        remove_completed_items_service,
+        schema={},
     )
 
     hass.http.register_view(ShoppingListView)
