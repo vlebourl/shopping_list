@@ -18,3 +18,9 @@ bring_select_list:
     name:
       description: The name of the Bring list.
       example: Shopping
+remove_completed_items:
+  description: Removes completed items.
+  fields:
+    name:
+      description: Removes completed items.
+      
