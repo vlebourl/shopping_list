@@ -276,9 +276,7 @@ class BringData:
         ]
 
     def convert_name(self, name):
-        if self.catalog.get(name):
-            return self.catalog.get(name)
-        return name
+        return self.catalog.get(name) or name
 
     async def purchase_item(self, item: ShoppingItem):
         await self.api.purchase_item(self.convert_name(item.name), item.specification)
@@ -307,8 +305,8 @@ class ShoppingData:
         complete = item["complete"]
         specification = ""
         if " [" in name:
-            specification = name[name.index(" [") + 2 : len(name) - 1]
-            name = name[0 : name.index(" [")]
+            specification = name[name.index(" [") + 2:-1]
+            name = name[:name.index(" [")]
         return ShoppingItem(
             {
                 "name": name,
@@ -339,8 +337,8 @@ class ShoppingData:
         """Add a shopping list item."""
         specification = ""
         if " [" in name:
-            specification = name[name.index(" [") + 2 : len(name) - 1]
-            name = name[0 : name.index(" [")]
+            specification = name[name.index(" [") + 2:-1]
+            name = name[:name.index(" [")]
         item = ShoppingItem(
             {
                 "name": name,
@@ -371,8 +369,8 @@ class ShoppingData:
             name = value
             specification = ""
             if " [" in name:
-                specification = name[name.index(" [") + 2 : len(name) - 1]
-                name = name[0 : name.index(" [")]
+                specification = name[name.index(" [") + 2:-1]
+                name = name[:name.index(" [")]
             await self.bring.remove_item(item)
             item.name = name
             item.specification = specification
