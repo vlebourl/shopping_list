@@ -52,7 +52,7 @@ class BringApi:
         self.lists = []
         self.headers = {}
         self.addheaders = {}
-        self.session = session if session else ClientSession()
+        self.session = session or ClientSession()
         self.logged = False
         self.selected_list = "Default"
 
@@ -81,11 +81,8 @@ class BringApi:
             result = await response.text()
         if not result:
             print("none")
-        message = None
-        if result.get("errorCode"):
-            message = result.get("error")
-
-        raise Exception(message if message else result)
+        message = result.get("error") if result.get("errorCode") else None
+        raise Exception(message or result)
 
     async def __get(
         self,
@@ -276,10 +273,14 @@ class BringApi:
         return self._translations
 
     async def translate_to_ch(self, item: str, locale) -> str:
-        for val, key in self.load_translations(locale).items():
-            if key == item:
-                return val
-        return item
+        return next(
+            (
+                val
+                for val, key in self.load_translations(locale).items()
+                if key == item
+            ),
+            item,
+        )
 
     # Load localized catalag of items
     async def load_catalog(self, locale):
